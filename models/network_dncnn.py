@@ -95,7 +95,7 @@ class IRCNN(nn.Module):
         # ------------------------------------
         """
         super(IRCNN, self).__init__()
-        L =[]
+        L = []
         L.append(nn.Conv2d(in_channels=in_nc, out_channels=nc, kernel_size=3, stride=1, padding=1, dilation=1, bias=True))
         L.append(nn.ReLU(inplace=True))
         L.append(nn.Conv2d(in_channels=nc, out_channels=nc, kernel_size=3, stride=1, padding=2, dilation=2, bias=True))
