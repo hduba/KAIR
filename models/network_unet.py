@@ -19,7 +19,7 @@ year={2020}
 
 
 class UNetRes(nn.Module):
-    def __init__(self, in_nc=3, out_nc=3, nc=[64, 128, 256, 512], nb=4, act_mode='R', downsample_mode='strideconv', upsample_mode='convtranspose', bias=True):
+    def __init__(self, in_nc=2, out_nc=1, nc=[64, 128, 256, 512], nb=4, act_mode='R', downsample_mode='strideconv', upsample_mode='convtranspose', bias=True):
         super(UNetRes, self).__init__()
 
         self.m_head = B.conv(in_nc, nc[0], bias=bias, mode='C')
