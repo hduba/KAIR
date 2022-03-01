@@ -61,7 +61,8 @@ def main(json_path='options/train_drunet.json'):
     # -->-->-->-->-->-->-->-->-->-->-->-->-->-
     init_iter_G, init_path_G = option.find_last_checkpoint(opt['path']['models'], net_type='G')
     opt['path']['pretrained_netG'] = init_path_G
-    init_iter_optimizerG, init_path_optimizerG = option.find_last_checkpoint(opt['path']['models'], net_type='optimizerG')
+    # init_iter_optimizerG, init_path_optimizerG = option.find_last_checkpoint(opt['path']['models'], net_type='optimizerG')
+    init_iter_optimizerG, init_path_optimizerG = 0, None
     opt['path']['pretrained_optimizerG'] = init_path_optimizerG
     current_step = max(init_iter_G, init_iter_optimizerG)
 
@@ -158,8 +159,7 @@ def main(json_path='options/train_drunet.json'):
     # Step--4 (main training)
     # ----------------------------------------
     '''
-
-    for epoch in range(1000000):  # keep running
+    for epoch in range(opt['max_epoch']):
         for i, train_data in enumerate(train_loader):
 
             current_step += 1

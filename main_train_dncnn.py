@@ -61,7 +61,8 @@ def main(json_path='options/train_dncnn.json'):
     # update opt
     # ----------------------------------------
     # -->-->-->-->-->-->-->-->-->-->-->-->-->-
-    init_iter, init_path_G = option.find_last_checkpoint(opt['path']['models'], net_type='G')
+    #init_iter, init_path_G = option.find_last_checkpoint(opt['path']['models'], net_type='G')
+    init_iter, init_path_G = 0, None
     opt['path']['pretrained_netG'] = init_path_G
     current_step = init_iter
 
@@ -150,7 +151,7 @@ def main(json_path='options/train_dncnn.json'):
     # ----------------------------------------
     '''
 
-    for epoch in range(opt['max_iters']):  # keep running
+    for epoch in range(opt['max_epoch']):  # keep running
         for i, train_data in enumerate(train_loader):
 
             current_step += 1

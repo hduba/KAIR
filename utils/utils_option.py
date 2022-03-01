@@ -159,7 +159,7 @@ def parse(opt_path, is_train=True):
     return opt
 
 
-def find_last_checkpoint(save_dir, net_type='G'):
+def find_last_checkpoint(save_dir, opt, net_type='G'):
     """
     Args: 
         save_dir: model folder

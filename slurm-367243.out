@@ -1,0 +1,111 @@
+22-02-05 15:33:02.950 :   task: drunet
+  model: plain
+  gpu_ids: [0]
+  scale: 1
+  n_channels: 3
+  sigma: [0, 50]
+  sigma_test: 25
+  path:[
+    root: denoising
+    pretrained_netG: None
+    task: denoising/drunet
+    log: denoising/drunet
+    options: denoising/drunet/options
+    models: denoising/drunet/models
+    images: denoising/drunet/images
+    pretrained_optimizerG: None
+  ]
+  datasets:[
+    train:[
+      name: train_dataset
+      dataset_type: fdncnn
+      dataroot_H: trainsets/trainH
+      dataroot_L: None
+      H_size: 128
+      dataloader_shuffle: True
+      dataloader_num_workers: 8
+      dataloader_batch_size: 64
+      phase: train
+      scale: 1
+      n_channels: 3
+    ]
+    test:[
+      name: test_dataset
+      dataset_type: fdncnn
+      dataroot_H: testsets/set12
+      dataroot_L: None
+      phase: test
+      scale: 1
+      n_channels: 3
+    ]
+  ]
+  netG:[
+    net_type: drunet
+    in_nc: 4
+    out_nc: 3
+    nc: [64, 128, 256, 512]
+    nb: 4
+    gc: 32
+    ng: 2
+    reduction: 16
+    act_mode: R
+    upsample_mode: convtranspose
+    downsample_mode: strideconv
+    bias: False
+    init_type: orthogonal
+    init_bn_type: uniform
+    init_gain: 0.2
+    scale: 1
+  ]
+  train:[
+    G_lossfn_type: l1
+    G_lossfn_weight: 1.0
+    G_optimizer_type: adam
+    G_optimizer_lr: 0.0001
+    G_optimizer_clipgrad: None
+    G_scheduler_type: MultiStepLR
+    G_scheduler_milestones: [100000, 200000, 300000, 400000]
+    G_scheduler_gamma: 0.5
+    G_regularizer_orthstep: None
+    G_regularizer_clipstep: None
+    checkpoint_test: 5000
+    checkpoint_save: 5000
+    checkpoint_print: 200
+    F_feature_layer: 34
+    F_weights: 1.0
+    F_lossfn_type: l1
+    F_use_input_norm: True
+    F_use_range_norm: False
+    G_optimizer_reuse: False
+    G_param_strict: True
+    E_param_strict: True
+    E_decay: 0
+  ]
+  opt_path: options/train_drunet.json
+  is_train: True
+  merge_bn: False
+  merge_bn_startpoint: -1
+  find_unused_parameters: True
+  dist: False
+  num_gpu: 1
+  rank: 0
+  world_size: 1
+
+export CUDA_VISIBLE_DEVICES=0
+number of GPUs is: 1
+LogHandlers setup!
+Random seed: 1369
+Traceback (most recent call last):
+  File "main_train_drunet.py", line 243, in <module>
+    main()
+  File "main_train_drunet.py", line 115, in main
+    train_set = define_Dataset(dataset_opt)
+  File "/home/hduba/MDF-Restructured/Denoisers/KAIR/data/select_dataset.py", line 68, in define_Dataset
+    dataset = D(dataset_opt)
+  File "/home/hduba/MDF-Restructured/Denoisers/KAIR/data/dataset_fdncnn.py", line 30, in __init__
+    self.paths_H = util.get_image_paths(opt['dataroot_H'])
+  File "/home/hduba/MDF-Restructured/Denoisers/KAIR/utils/utils_image.py", line 70, in get_image_paths
+    paths = sorted(_get_paths_from_images(dataroot))
+  File "/home/hduba/MDF-Restructured/Denoisers/KAIR/utils/utils_image.py", line 86, in _get_paths_from_images
+    assert images, '{:s} has no valid image file'.format(path)
+AssertionError: trainsets/trainH has no valid image file
