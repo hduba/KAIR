@@ -8,6 +8,7 @@ from torchvision.utils import make_grid
 from datetime import datetime
 # import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
+from osgeo import gdal
 from mpl_toolkits.mplot3d import Axes3D
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -20,10 +21,39 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 # https://github.com/twhui/SRGAN-pyTorch
 # https://github.com/xinntao/BasicSR
 # --------------------------------------------
+
+
+Edited April 22 by Haley Duba
 '''
 
 
-IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP', '.tif']
+IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP', '.tif', '.jp2']
+
+
+def add_noise_norm(img, noise_standard_dev):
+    """
+    Args:
+        img: N x N image array to add noise to (assumes values in [0,1])
+        noise_standard_dev: Standard deviation of AWGN to add to normalized image (value from 0 to 1)
+
+    Returns: N x N image array with added noise
+
+    """
+
+    img_min = np.min(img)
+    img_max = np.max(img)
+    img_range = img_max - img_min
+
+    img_norm = (img - img_min)/img_range
+
+    e_size = (img.shape[0], img.shape[1])
+    e = np.random.normal(0, noise_standard_dev, e_size)
+
+    noisy_img_norm = img_norm + e
+
+    noisy_img = noisy_img_norm * img_range + img_min
+
+    return noisy_img
 
 
 def is_image_file(filename):
@@ -121,8 +151,17 @@ def imssave(imgs, img_path):
     for i, img in enumerate(imgs):
         if img.ndim == 3:
             img = img[:, :, [2, 1, 0]]
-        new_path = os.path.join(os.path.dirname(img_path), img_name+str('_{:04d}'.format(i))+'.png')
-        cv2.imwrite(new_path, img)
+
+        if img_path.endswith("jp2"):
+            rows = img.shape[0]
+            cols = img.shape[1]
+            driver = gdal.GetDriverByName('GTiff')
+            new_path = os.path.join(os.path.dirname(img_path), img_name + str('_{:04d}'.format(i)) + '.jp2')
+            dataset_out = driver.Create(new_path, cols, rows, img.ndim, gdal.UInt16)
+            dataset_out.GetRasterBand(1).WriteArray(img)
+        else:
+            new_path = os.path.join(os.path.dirname(img_path), img_name+str('_{:04d}'.format(i))+'.png')
+            cv2.imwrite(new_path, img)
 
 
 def split_imageset(original_dataroot, taget_dataroot, n_channels=3, p_size=512, p_overlap=96, p_max=800):
@@ -184,20 +223,31 @@ def mkdir_and_rename(path):
 
 
 # --------------------------------------------
-# get uint8 image of size HxWxn_channles (RGB)
+# get uint8 or uint16 image of size HxWxn_channles (RGB)
 # --------------------------------------------
 def imread_uint(path, n_channels=3):
     #  input: path
     # output: HxWx3(RGB or GGG), or HxWx1 (G)
-    if n_channels == 1:
-        img = cv2.imread(path, 0)  # cv2.IMREAD_GRAYSCALE
-        img = np.expand_dims(img, axis=2)  # HxWx1
-    elif n_channels == 3:
-        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
-        if img.ndim == 2:
-            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
-        else:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # RGB
+
+    img = None
+    if path.endswith("jp2"):
+        if n_channels == 1:
+            img_gdal = gdal.Open(path)
+            img = np.array(img_gdal.ReadAsArray())
+            img = np.uint16(img) / 65535
+        elif n_channels == 3:
+            print("Not yet supported")
+    else:
+        if n_channels == 1:
+            img = cv2.imread(path, 0) / 255 # cv2.IMREAD_GRAYSCALE
+            img = np.expand_dims(img, axis=2)  # HxWx1
+        elif n_channels == 3:
+            print("These values will be scaled incorrectly")
+            img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
+            if img.ndim == 2:
+                img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
+            else:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # RGB
     return img
 
 
@@ -250,43 +300,65 @@ def read_img(path):
 # --------------------------------------------
 
 
+# def uint2single(img):
+#
+#     return np.float32(img/255.)
+#
+#
+# def single2uint(img):
+#
+#     return np.uint8((img.clip(0, 1)*255.).round())
+#
+#
+# def uint162single(img):
+#
+#     return np.float32(img/65535.)
+#
+#
+# def single2uint16(img):
+#
+#     return np.uint16((img.clip(0, 1)*65535.).round())
+
 def uint2single(img):
 
-    return np.float32(img/255.)
+    return np.float32(img)
 
 
 def single2uint(img):
 
-    return np.uint8((img.clip(0, 1)*255.).round())
-
-
-def uint162single(img):
-
-    return np.float32(img/65535.)
-
-
-def single2uint16(img):
-
-    return np.uint16((img.clip(0, 1)*65535.).round())
+    return np.uint8((img.clip(0, 1)).round())
 
 
 # --------------------------------------------
 # numpy(uint) (HxWxC or HxW) <--->  tensor
 # --------------------------------------------
 
+#
+# # convert uint to 4-dimensional torch tensor
+# def uint2tensor4(img):
+#     if img.ndim == 2:
+#         img = np.expand_dims(img, axis=2)
+#     return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(255.).unsqueeze(0)
+#
+#
+# # convert uint to 3-dimensional torch tensor
+# def uint2tensor3(img):
+#     if img.ndim == 2:
+#         img = np.expand_dims(img, axis=2)
+#     return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(255.)
 
 # convert uint to 4-dimensional torch tensor
 def uint2tensor4(img):
     if img.ndim == 2:
         img = np.expand_dims(img, axis=2)
-    return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(255.).unsqueeze(0)
+    return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().unsqueeze(0)
 
 
 # convert uint to 3-dimensional torch tensor
 def uint2tensor3(img):
     if img.ndim == 2:
         img = np.expand_dims(img, axis=2)
-    return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(255.)
+    return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().
 
 
 # convert 2/3/4-dimensional torch tensor to uint
