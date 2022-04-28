@@ -129,6 +129,7 @@ def main(json_path='options/train_dncnn.json'):
         else:
             raise NotImplementedError("Phase [%s] is not recognized." % phase)
 
+
     '''
     # ----------------------------------------
     # Step--3 (initialize model)
@@ -219,8 +220,8 @@ def main(json_path='options/train_dncnn.json'):
                     model.test()
 
                     visuals = model.current_visuals()
-                    E_img = util.tensor2uint(visuals['E'])
-                    H_img = util.tensor2uint(visuals['H'])
+                    E_img = util.tensor2uint(visuals['E'], ext)
+                    H_img = util.tensor2uint(visuals['H'], ext)
 
                     # -----------------------
                     # save estimated image E

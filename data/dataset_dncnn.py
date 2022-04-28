@@ -37,7 +37,9 @@ class DatasetDnCNN(data.Dataset):
         # get H image
         # ------------------------------------
         H_path = self.paths_H[index]
-        # If n_channels=1, will return image in float format.
+        H_ext = H_path[-3:]
+
+        # If n_channels = 1, will return image in float format.
         img_H = util.imread_uint(H_path, self.n_channels)
 
         L_path = H_path
@@ -64,14 +66,9 @@ class DatasetDnCNN(data.Dataset):
             patch_H = util.augment_img(patch_H, mode=mode)
 
             # --------------------------------
-            # add noise
-            # --------------------------------
-            # img_L = util.add_noise_norm(patch_H, self.sigma)
-
-            # --------------------------------
             # HWC to CHW, numpy(uint) to tensor
             # --------------------------------
-            img_H = util.uint2tensor3(patch_H)
+            img_H = util.uint2tensor3(patch_H, H_ext)
             img_L = img_H.clone()
 
             # --------------------------------
@@ -86,13 +83,13 @@ class DatasetDnCNN(data.Dataset):
             # get L/H image pairs
             # --------------------------------
             """
-            img_H = util.uint2single(img_H)
+            img_H = util.uint2single(img_H, H_ext)
             img_L = np.copy(img_H)
 
             # --------------------------------
             # add noise
             # --------------------------------
-            
+
             img_L = util.add_noise_ndarray(img_L, self.sigma)
 
             # --------------------------------

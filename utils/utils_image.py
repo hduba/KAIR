@@ -34,12 +34,13 @@ def add_noise_tensor(img, noise_sigma):
 
     img_norm = torch.div(torch.sub(img, img_min), img_range)
         
-    noise = torch.randn(img.size()).mul_(noise_sigma/255)
+    noise = torch.randn(img.size()).mul_(noise_sigma)
     noisy_img_norm = img_norm.add_(noise)
 
     noisy_img = noisy_img_norm * img_range + img_min
 
     return noisy_img
+
 
 def add_noise_ndarray(img, noise_sigma):
     img_min = np.min(img)
@@ -48,7 +49,7 @@ def add_noise_ndarray(img, noise_sigma):
 
     img_norm = (img - img_min)/img_range
         
-    noise = np.random.normal(0, noise_sigma/255, img.shape)
+    noise = np.random.normal(0, noise_sigma, img.shape)
     noisy_img_norm = img_norm + noise
 
     noisy_img = noisy_img_norm * img_range + img_min
@@ -219,7 +220,7 @@ def mkdir_and_rename(path):
 
 
 # --------------------------------------------
-# get uint8 image of size HxWxn_channles (RGB)
+# get uint8/uint16 image of size HxWxn_channels (RGB)
 # --------------------------------------------
 def imread_uint(path, n_channels=3):
     #  input: path
@@ -234,6 +235,7 @@ def imread_uint(path, n_channels=3):
             img = cv2.imread(path, 0)  # cv2.IMREAD_GRAYSCALE
             img = np.expand_dims(img, axis=2)  # HxWx1
     elif n_channels == 3:
+        print("Not supported for 16 bit images yet.")
         img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
         if img.ndim == 2:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
@@ -291,8 +293,11 @@ def read_img(path):
 # --------------------------------------------
 
 
-def uint2single(img):
-    return np.float32(img / 255.)
+def uint2single(img, image_ext):
+    if image_ext == 'jp2':
+        return np.float32(img / 65535.)
+    else:
+        return np.float32(img / 255.)
 
 
 def single2uint(img):
@@ -320,18 +325,24 @@ def uint2tensor4(img):
 
 
 # convert uint to 3-dimensional torch tensor
-def uint2tensor3(img):
+def uint2tensor3(img, image_ext):
     if img.ndim == 2:
         img = np.expand_dims(img, axis=2)
-    return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(255.)
+    if image_ext == 'jp2':
+        return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(65535.)
+    else:
+        return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(255.)
 
 
 # convert 2/3/4-dimensional torch tensor to uint
-def tensor2uint(img):
+def tensor2uint(img, image_ext):
     img = img.data.squeeze().float().clamp_(0, 1).cpu().numpy()
     if img.ndim == 3:
         img = np.transpose(img, (1, 2, 0))
-    return np.uint8((img * 255.0).round())
+    if image_ext == 'jp2':
+        return np.uint16((img * 65535.0).round())
+    else:
+        return np.uint8((img * 255.0).round())
 
 
 # --------------------------------------------
