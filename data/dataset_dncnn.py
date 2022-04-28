@@ -66,19 +66,19 @@ class DatasetDnCNN(data.Dataset):
             # --------------------------------
             # add noise
             # --------------------------------
-            img_L = util.add_noise_norm(patch_H)
+            # img_L = util.add_noise_norm(patch_H, self.sigma)
 
             # --------------------------------
             # HWC to CHW, numpy(uint) to tensor
             # --------------------------------
             img_H = util.uint2tensor3(patch_H)
-            img_L = util.uint2tensor3(img_L)
+            img_L = img_H.clone()
 
-            # # --------------------------------
-            # # add noise
-            # # --------------------------------
-            # noise = torch.randn(img_L.size()).mul_(self.sigma/255.0)
-            # img_L.add_(noise)
+            # --------------------------------
+            # add noise
+            # --------------------------------
+            
+            img_L = util.add_noise_tensor(img_L, self.sigma)
 
         else:
             """
@@ -87,13 +87,13 @@ class DatasetDnCNN(data.Dataset):
             # --------------------------------
             """
             img_H = util.uint2single(img_H)
-            img_L = util.add_noise_norm(img_H)
+            img_L = np.copy(img_H)
 
             # --------------------------------
             # add noise
             # --------------------------------
-            # np.random.seed(seed=0)
-            # img_L += np.random.normal(0, self.sigma_test/255.0, img_L.shape)
+            
+            img_L = util.add_noise_ndarray(img_L, self.sigma)
 
             # --------------------------------
             # HWC to CHW, numpy to tensor
