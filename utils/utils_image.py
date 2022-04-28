@@ -35,7 +35,7 @@ def add_noise_tensor(img, noise_sigma):
     img_norm = torch.div(torch.sub(img, img_min), img_range)
         
     noise = torch.randn(img.size()).mul_(noise_sigma/255)
-    noisy_img_norm = img.add_(noise)
+    noisy_img_norm = img_norm.add_(noise)
 
     noisy_img = noisy_img_norm * img_range + img_min
 
@@ -49,7 +49,7 @@ def add_noise_ndarray(img, noise_sigma):
     img_norm = (img - img_min)/img_range
         
     noise = np.random.normal(0, noise_sigma/255, img.shape)
-    noisy_img_norm = img + noise
+    noisy_img_norm = img_norm + noise
 
     noisy_img = noisy_img_norm * img_range + img_min
 
