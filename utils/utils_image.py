@@ -32,7 +32,7 @@ def add_noise_tensor(img, noise_sigma):
     img_std = torch.std(img)
 
     img_low = img_mean - 2 * img_std
-    img_high  = img_mean + 2 * img_std
+    img_high = img_mean + 2 * img_std
 
     img_range = img_high - img_low
 
@@ -41,7 +41,7 @@ def add_noise_tensor(img, noise_sigma):
     noise = torch.mul(torch.randn(img.size()), noise_sigma)
     noisy_img_norm = torch.add(img_norm, noise)
 
-    noisy_img = torch.add(torch.mul(noisy_img_norm, img_range), img_min)
+    noisy_img = torch.add(torch.mul(noisy_img_norm, img_range), img_low)
 
     return noisy_img
 
