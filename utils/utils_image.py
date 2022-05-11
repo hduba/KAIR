@@ -38,10 +38,10 @@ def add_noise_tensor(img, noise_sigma):
 
     img_norm = torch.div(torch.sub(img, img_low), img_range)
         
-    noise = torch.randn(img.size()).mul_(noise_sigma)
-    noisy_img_norm = img_norm.add_(noise)
+    noise = torch.mul(torch.randn(img.size()), noise_sigma)
+    noisy_img_norm = torch.add(img_norm, noise)
 
-    noisy_img = noisy_img_norm * img_range + img_low
+    noisy_img = torch.add(torch.mul(noisy_img_norm, img_range), img_min)
 
     return noisy_img
 
@@ -165,7 +165,8 @@ def imssave(imgs, img_path):
         if ext.endswith('jp2'):
             new_path = os.path.join(os.path.dirname(img_path), img_name + str('_{:04d}'.format(i)) + '.jp2')
             driver = gdal.GetDriverByName('GTiff')
-            dataset_out = driver.Create(new_path, img.shape[0], img.shape[1], img.ndim, gdal.UInt16)
+            dataset_out = driver.Create(new_path, img.shape[0], img.shape[1], img.ndim, gdal.UInt16)     
+            dataset_out.GetRasterBand(1).WriteArray(img * 65535)
         else:
             new_path = os.path.join(os.path.dirname(img_path), img_name + str('_{:04d}'.format(i)) + '.png')
             cv2.imwrite(new_path, img)
@@ -259,9 +260,16 @@ def imread_uint(path, n_channels=3):
 # --------------------------------------------
 def imsave(img, img_path):
     img = np.squeeze(img)
-    if img.ndim == 3:
-        img = img[:, :, [2, 1, 0]]
-    cv2.imwrite(img_path, img)
+    if img_path.endswith("jp2"):
+        rows = img.shape[0]
+        cols = img.shape[1]
+        driver = gdal.GetDriverByName('GTiff')
+        dataset_out = driver.Create(img_path, cols, rows, 1, gdal.GDT_Float32)
+        dataset_out.GetRasterBand(1).WriteArray(img)
+    else:
+        if img.ndim == 3:
+             img = img[:, :, [2, 1, 0]]
+        cv2.imwrite(img_path, img)
 
 
 def imwrite(img, img_path):

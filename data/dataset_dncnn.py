@@ -22,7 +22,7 @@ class DatasetDnCNN(data.Dataset):
         self.opt = opt
         self.n_channels = opt['n_channels'] if opt['n_channels'] else 3
         self.patch_size = opt['H_size'] if opt['H_size'] else 64
-        self.sigma = opt['sigma'] if opt['sigma'] else 25
+        self.sigma = opt['sigma'] if opt['sigma'] else 0.1
         self.sigma_test = opt['sigma_test'] if opt['sigma_test'] else self.sigma
 
         # ------------------------------------
