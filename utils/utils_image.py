@@ -28,31 +28,41 @@ IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PP
 
 def add_noise_tensor(img, noise_sigma):
 
-    img_min = torch.min(img)
-    img_max = torch.max(img)
-    img_range = img_max - img_min
+    img_mean = torch.mean(img)
+    img_std = torch.std(img)
 
-    img_norm = torch.div(torch.sub(img, img_min), img_range)
+    img_low = img_mean - 2 * img_std
+    img_high  = img_mean + 2 * img_std
+
+    img_range = img_high - img_low
+
+    img_norm = torch.div(torch.sub(img, img_low), img_range)
         
     noise = torch.randn(img.size()).mul_(noise_sigma)
     noisy_img_norm = img_norm.add_(noise)
 
-    noisy_img = noisy_img_norm * img_range + img_min
+    noisy_img = noisy_img_norm * img_range + img_low
 
     return noisy_img
 
 
 def add_noise_ndarray(img, noise_sigma):
-    img_min = np.min(img)
-    img_max = np.max(img)
-    img_range = img_max - img_min
+    img_mean = np.mean(img)
+    img_std = np.std(img)
 
-    img_norm = (img - img_min)/img_range
-        
-    noise = np.random.normal(0, noise_sigma, img.shape)
-    noisy_img_norm = img_norm + noise
+    img_low = img_mean - 2 * img_std
+    img_high = img_mean + 2 * img_std
 
-    noisy_img = noisy_img_norm * img_range + img_min
+    img_range = img_high - img_low
+
+    img_norm = (img - img_low)/img_range
+
+    e_size = (img.shape[0], img.shape[1])
+    e = np.random.normal(0, noise_sigma, e_size)
+
+    noisy_img_norm = img_norm + e
+
+    noisy_img = noisy_img_norm * img_range + img_low
 
     return noisy_img
 
