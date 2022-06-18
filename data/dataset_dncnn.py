@@ -40,7 +40,7 @@ class DatasetDnCNN(data.Dataset):
         H_ext = H_path[-3:]
 
         # If n_channels = 1, will return image in float format.
-        img_H = util.imread_uint(H_path, self.n_channels)
+        img_H = util.imread_uintd(H_path, self.n_channels)
 
         L_path = H_path
 
