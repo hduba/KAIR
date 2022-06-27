@@ -26,43 +26,56 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP', '.tif', '.jp2']
 
 
+def normalize_image_ndarray(img, perc=98):
+    img_high = np.percentile(img, perc)
+
+    img_norm = img / img_high
+
+    return img_norm, img_high
+
+
+def unnormalize_image_ndarray(img_norm, img_high):
+    img = img_norm * img_high
+
+    return img
+
+
+def normalize_image_tensor(img, perc=0.98):
+    img_high = torch.quantile(img, perc)
+
+    img_norm = torch.div(img, img_high)
+
+    return img_norm, img_high
+
+
+def unnormalize_image_tensor(img_norm , img_high):
+    img = torch.multiply(img_norm, img_high)
+
+    return img
+
+
 def add_noise_tensor(img, noise_sigma):
 
-    img_mean = torch.mean(img)
-    img_std = torch.std(img)
+    img_norm = normalize_image_tensor(img)
 
-    img_low = img_mean - 2 * img_std
-    img_high = img_mean + 2 * img_std
-
-    img_range = img_high - img_low
-
-    img_norm = torch.div(torch.sub(img, img_low), img_range)
-        
     noise = torch.mul(torch.randn(img.size()), noise_sigma)
     noisy_img_norm = torch.add(img_norm, noise)
 
-    noisy_img = torch.add(torch.mul(noisy_img_norm, img_range), img_low)
+    noisy_img = unnormalize_image_tensor(noisy_img_norm)
 
     return noisy_img
 
 
 def add_noise_ndarray(img, noise_sigma):
-    img_mean = np.mean(img)
-    img_std = np.std(img)
 
-    img_low = img_mean - 2 * img_std
-    img_high = img_mean + 2 * img_std
-
-    img_range = img_high - img_low
-
-    img_norm = (img - img_low)/img_range
+    img_norm = normalize_image_ndarray(img)
 
     e_size = (img.shape[0], img.shape[1])
     e = np.random.normal(0, noise_sigma, e_size)
 
     noisy_img_norm = img_norm + e
 
-    noisy_img = noisy_img_norm * img_range + img_low
+    noisy_img = unnormalize_image_ndarray(noisy_img_norm)
 
     return noisy_img
 
