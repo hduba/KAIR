@@ -101,7 +101,7 @@ def main(json_path='options/train_dncnn.json'):
 
     '''
     # ----------------------------------------
-    # Step--2 (creat dataloader)
+    # Step--2 (create dataloader)
     # ----------------------------------------
     '''
 
@@ -128,9 +128,6 @@ def main(json_path='options/train_dncnn.json'):
                                      drop_last=False, pin_memory=True)
         else:
             raise NotImplementedError("Phase [%s] is not recognized." % phase)
-
-    for i, train_data in enumerate(train_loader):
-        print(train_data.shape)
 
     '''
     # ----------------------------------------

@@ -4,6 +4,8 @@ import random
 import numpy as np
 import torch
 import cv2
+import tensorflow_probability as tfp
+import tensorflow as tf
 from torchvision.utils import make_grid
 from datetime import datetime
 # import torchvision.transforms as transforms
@@ -40,42 +42,43 @@ def unnormalize_image_ndarray(img_norm, img_high):
     return img
 
 
-def normalize_image_tensor(img, perc=0.98):
-    img_high = torch.quantile(img, perc)
+def normalize_image_tensor(img, perc=98):
+    # img_high = tfp.stats.percentile(img, q=perc)
 
+    img_high = torch.max(img)
     img_norm = torch.div(img, img_high)
 
     return img_norm, img_high
 
 
 def unnormalize_image_tensor(img_norm , img_high):
-    img = torch.multiply(img_norm, img_high)
+    img = torch.mul(img_norm, img_high)
 
     return img
 
 
 def add_noise_tensor(img, noise_sigma):
 
-    img_norm = normalize_image_tensor(img)
+    img_norm, img_high = normalize_image_tensor(img)
 
-    noise = torch.mul(torch.randn(img.size()), noise_sigma)
+    noise = torch.mul(torch.randn(img_norm.size()), noise_sigma)
     noisy_img_norm = torch.add(img_norm, noise)
 
-    noisy_img = unnormalize_image_tensor(noisy_img_norm)
+    noisy_img = unnormalize_image_tensor(noisy_img_norm, img_high)
 
     return noisy_img
 
 
 def add_noise_ndarray(img, noise_sigma):
 
-    img_norm = normalize_image_ndarray(img)
+    img_norm, img_high = normalize_image_ndarray(img)
 
     e_size = (img.shape[0], img.shape[1])
     e = np.random.normal(0, noise_sigma, e_size)
 
     noisy_img_norm = img_norm + e
 
-    noisy_img = unnormalize_image_ndarray(noisy_img_norm)
+    noisy_img = unnormalize_image_ndarray(noisy_img_norm, img_high)
 
     return noisy_img
 
