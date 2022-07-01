@@ -60,27 +60,14 @@ def unnormalize_image_tensor(img_norm , img_high):
 
 
 def add_noise_tensor(img, noise_sigma):
-
-    img_norm, img_high = normalize_image_tensor(img)
-
-    noise = torch.randn(img_norm.size()).mul_(noise_sigma)
-    noisy_img_norm = torch.add(img_norm, noise)
-
-    noisy_img = unnormalize_image_tensor(noisy_img_norm, img_high)
-
+    noise = torch.randn(img.size()).mul_(noise_sigma)
+    noisy_img = torch.add(img, noise)
     return noisy_img
 
 
 def add_noise_ndarray(img, noise_sigma):
-
-    img_norm, img_high = normalize_image_ndarray(img)
-
-    noise = np.random.normal(0, noise_sigma, img_norm.shape)
-
-    noisy_img_norm = img_norm + noise
-
-    noisy_img = unnormalize_image_ndarray(noisy_img_norm, img_high)
-
+    noise = np.random.normal(0, noise_sigma, img.shape)
+    noisy_img = img + noise
     return noisy_img
 
 
