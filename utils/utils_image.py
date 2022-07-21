@@ -4,8 +4,8 @@ import random
 import numpy as np
 import torch
 import cv2
-import tensorflow_probability as tfp
-import tensorflow as tf
+# import tensorflow_probability as tfp
+# import tensorflow as tf
 from torchvision.utils import make_grid
 from datetime import datetime
 # import torchvision.transforms as transforms
@@ -259,6 +259,17 @@ def imread_uint(path, n_channels=3):
             img[:, :, 0] = r
             img[:, :, 1] = g
             img[:, :, 2] = b
+            g = img_gdal.GetRasterBand(2).ReadAsArray()
+            b = img_gdal.GetRasterBand(3).ReadAsArray()
+            img_rgb = np.zeros((r.shape[0], r.shape[1], 3), 'uint16')
+            img_rgb[:, :, 0] = r
+            img_rgb[:, :, 1] = g
+            img_rgb[:, :, 2] = b
+            img = np.expand_dims(img_rgb, axis=2)
+
+        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
+        if img.ndim == 2:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
         else:
             img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
             if img.ndim == 2:
@@ -299,7 +310,7 @@ def imwrite(img, img_path):
 
 
 # --------------------------------------------
-# get single image of size HxWxn_channles (BGR)
+# get single image of size HxWxn_channels (BGR)
 # --------------------------------------------
 def read_img(path):
     # read image by cv2
@@ -385,7 +396,6 @@ def tensor2uint(img, image_ext):
 # --------------------------------------------
 # numpy(single) (HxWxC) <--->  tensor
 # --------------------------------------------
-
 
 # convert single (HxWxC) to 3-dimensional torch tensor
 def single2tensor3(img):
