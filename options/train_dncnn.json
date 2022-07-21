@@ -4,7 +4,7 @@
   , "gpu_ids": [0]
 
   , "scale": 1       // broadcast to "netG" if SISR
-  , "n_channels": 1  // broadcast to "datasets", 1 for grayscale, 3 for color
+  , "n_channels": 3  // broadcast to "datasets", 1 for grayscale, 3 for color
 
   , "merge_bn": true               // BN for DnCNN
   , "merge_bn_startpoint": 400000  // merge BN after N iterations
@@ -18,7 +18,7 @@
     "train": {
       "name": "train_dataset"           // just name
       , "dataset_type": "dncnn"         // "dncnn" | "dnpatch" for dncnn,  | "fdncnn" | "ffdnet" | "sr" | "srmd" | "dpsr" | "plain" | "plainpatch"
-      , "dataroot_H": "trainsets/S2_train"// path of H training dataset
+      , "dataroot_H": "trainsets/trainH"// path of H training dataset
       , "dataroot_L": null              // path of L training dataset
       , "H_size": 40                    // patch size 40 | 64 | 96 | 128 | 192
 
@@ -31,7 +31,7 @@
     , "test": {
       "name": "test_dataset"            // just name
       , "dataset_type": "dncnn"         // "dncnn" | "dnpatch" for dncnn,  | "fdncnn" | "ffdnet" | "sr" | "srmd" | "dpsr" | "plain" | "plainpatch"
-      , "dataroot_H": "testsets/S2_test"  // path of H testing dataset
+      , "dataroot_H": "testsets/real_faces"  // path of H testing dataset
       , "dataroot_L": null              // path of L testing dataset
 
       , "sigma": 0.1                     // 15, 25, 50 for DnCNN | [0, 75] for FFDNet and FDnCNN
@@ -42,7 +42,7 @@
 
   , "netG": {
     "net_type": "dncnn" // "dncnn" | "fdncnn" | "ffdnet" | "srmd" | "dpsr" | "msrresnet0" |  "msrresnet1" | "rrdb" 
-    , "in_nc": 1        // input channel number
+    , "in_nc": 3        // input channel number
     , "out_nc": 1       // ouput channel number
     , "nc": 64          // 64 for "dncnn"
     , "nb": 17          // 17 for "dncnn", 20 for dncnn3, 16 for "srresnet"

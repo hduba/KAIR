@@ -129,6 +129,10 @@ def main(json_path='options/train_dncnn.json'):
         else:
             raise NotImplementedError("Phase [%s] is not recognized." % phase)
 
+    for i, train_data in enumerate(test_loader):
+        print(i)
+        print(train_data.shape)
+
     '''
     # ----------------------------------------
     # Step--3 (initialize model)
