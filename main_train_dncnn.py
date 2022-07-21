@@ -225,8 +225,8 @@ def main(json_path='options/train_dncnn.json'):
                     # -----------------------
                     # save estimated image E
                     # -----------------------
-                    save_img_path = os.path.join(img_dir, '{:s}_{:d}{:s}'.format(img_name, current_step, ext))
-                    util.imsave(E_img, save_img_path)
+                    # save_img_path = os.path.join(img_dir, '{:s}_{:d}{:s}'.format(img_name, current_step, ext))
+                    # util.imsave(E_img, save_img_path, n_channels = opt['n_channels'])
 
                     # -----------------------
                     # calculate PSNR

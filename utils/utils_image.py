@@ -250,26 +250,41 @@ def imread_uint(path, n_channels=3):
             img = cv2.imread(path, 0)  # cv2.IMREAD_GRAYSCALE
             img = np.expand_dims(img, axis=2)  # HxWx1
     elif n_channels == 3:
-        print("Not supported for 16 bit images yet.")
-        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
-        if img.ndim == 2:
-            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
+        if path.endswith('jp2'):
+            img_gdal = gdal.Open(path)
+            r = img_gdal.GetRasterBand(1).ReadAsArray()
+            g = img_gdal.GetRasterBand(1).ReadAsArray()
+            b = img_gdal.GetRasterBand(1).ReadAsArray()
+            img = np.zeros((r.shape[0], r.shape[1], 3))
+            img[:, :, 0] = r
+            img[:, :, 1] = g
+            img[:, :, 2] = b
         else:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # RGB
+            img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
+            if img.ndim == 2:
+                img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
+            else:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # RGB
     return img
 
 
 # --------------------------------------------
 # matlab's imwrite
 # --------------------------------------------
-def imsave(img, img_path):
+def imsave(img, img_path, n_channels=3):
     img = np.squeeze(img)
     if img_path.endswith("jp2"):
         rows = img.shape[0]
         cols = img.shape[1]
         driver = gdal.GetDriverByName('GTiff')
-        dataset_out = driver.Create(img_path, cols, rows, 1, gdal.GDT_Float32)
-        dataset_out.GetRasterBand(1).WriteArray(img)
+        if n_channels == 1:
+             dataset_out = driver.Create(img_path, cols, rows, 1, gdal.GDT_Float32)
+             dataset_out.GetRasterBand(1).WriteArray(img)
+        elif n_channels == 3:
+             dataset_out = driver.Create(img_path, cols, rows, 3, gdal.GDT_Float32)
+             dataset_out.GetRasterBand(1).WriteArray(img)
+             dataset_out.GetRasterBand(2).WriteArray(img)
+             dataset_out.GetRasterBand(3).WriteArray(img)
     else:
         if img.ndim == 3:
              img = img[:, :, [2, 1, 0]]
