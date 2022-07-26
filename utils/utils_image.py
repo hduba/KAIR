@@ -253,24 +253,13 @@ def imread_uint(path, n_channels=3):
         if path.endswith('jp2'):
             img_gdal = gdal.Open(path)
             r = img_gdal.GetRasterBand(1).ReadAsArray()
-            g = img_gdal.GetRasterBand(1).ReadAsArray()
-            b = img_gdal.GetRasterBand(1).ReadAsArray()
+            g = img_gdal.GetRasterBand(2).ReadAsArray()
+            b = img_gdal.GetRasterBand(3).ReadAsArray()
             img = np.zeros((r.shape[0], r.shape[1], 3))
             img[:, :, 0] = r
             img[:, :, 1] = g
             img[:, :, 2] = b
-            g = img_gdal.GetRasterBand(2).ReadAsArray()
-            b = img_gdal.GetRasterBand(3).ReadAsArray()
-            img_rgb = np.zeros((r.shape[0], r.shape[1], 3), 'uint16')
-            img_rgb[:, :, 0] = r
-            img_rgb[:, :, 1] = g
-            img_rgb[:, :, 2] = b
-            img = np.expand_dims(img_rgb, axis=2)
-
-        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
-        if img.ndim == 2:
-            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
-        else:
+        else: 
             img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
             if img.ndim == 2:
                 img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
@@ -734,7 +723,8 @@ def calculate_psnr(img1, img2, border=0):
     mse = np.mean((img1 - img2) ** 2)
     if mse == 0:
         return float('inf')
-    return 20 * math.log10(255.0 / math.sqrt(mse))
+    #return 20 * math.log10(255.0 / math.sqrt(mse))
+    return 20 * math.log10(np.max(img1)/ math.sqrt(mse))
 
 
 # --------------------------------------------

@@ -7,4 +7,8 @@
 
 cd $SLURM_SUBMIT_DIR
 
-python3 main_train_drunet.py
+module --force purge
+module load anaconda/5.1.0-py36
+source activate MDFpy36
+
+python3 main_train_dncnn.py
