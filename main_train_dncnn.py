@@ -150,7 +150,6 @@ def main(json_path='options/train_dncnn.json'):
     # Step--4 (main training)
     # ----------------------------------------
     '''
-
     #for epoch in range(opt['max_epoch']):  # keep running
     for epoch in range(6000):
         for i, train_data in enumerate(train_loader):

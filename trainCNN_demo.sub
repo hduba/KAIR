@@ -9,6 +9,6 @@ cd $SLURM_SUBMIT_DIR
 
 module --force purge
 module load anaconda/5.1.0-py36
-source activate MDFpy36
+source activate gdalpy36
 
 python3 main_train_dncnn.py

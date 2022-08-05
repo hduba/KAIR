@@ -89,6 +89,8 @@ def main():
     else:
         nb = 17               # fixed
 
+    n_channels = 3
+    nb = 20
     result_name = args.testset_name + '_' + args.model_name     # fixed
     border = args.sf if args.task_current == 'sr' else 0        # shave boader to calculate PSNR and SSIM
     model_path = os.path.join(args.model_pool, args.model_name+'.pth')
@@ -116,7 +118,7 @@ def main():
     # ----------------------------------------
 
     from models.network_dncnn import DnCNN as net
-    model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='R')
+    model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='BR')
     # model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='BR')  # use this if BN is not merged by utils_bnorm.merge_bn(model)
     model.load_state_dict(torch.load(model_path), strict=True)
     model.eval()
@@ -145,7 +147,7 @@ def main():
         img_name, ext = os.path.splitext(os.path.basename(img))
         # logger.info('{:->4d}--> {:>10s}'.format(idx+1, img_name+ext))
         img_L = util.imread_uint(img, n_channels=n_channels)
-        img_L = util.uint2single(img_L)
+        img_L = util.uint2single(img_L, 'png')
 
         if args.need_degradation:  # degradation process
             np.random.seed(seed=0)  # for reproducibility
