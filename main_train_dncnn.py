@@ -8,6 +8,7 @@ from collections import OrderedDict
 import logging
 import torch
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 
 
 from utils import utils_logger
@@ -145,13 +146,15 @@ def main(json_path='options/train_dncnn.json'):
     model.init_train()
     logger.info(model.info_params())
 
+    train_loss_dict = {}
+    valid_avg_psnr_dict = {}
+
     '''
     # ----------------------------------------
     # Step--4 (main training)
     # ----------------------------------------
     '''
-    #for epoch in range(opt['max_epoch']):  # keep running
-    for epoch in range(6000):
+    for epoch in range(opt['max_epoch']):  # keep running
         for i, train_data in enumerate(train_loader):
 
             current_step += 1
@@ -191,6 +194,8 @@ def main(json_path='options/train_dncnn.json'):
                 for k, v in logs.items():  # merge log information into message
                     message += '{:s}: {:.3e} '.format(k, v)
                 logger.info(message)
+            
+                train_loss_dict[current_step] = logs["G_loss"]
 
             # -------------------------------
             # 5) save model
@@ -225,8 +230,8 @@ def main(json_path='options/train_dncnn.json'):
                     # -----------------------
                     # save estimated image E
                     # -----------------------
-                    # save_img_path = os.path.join(img_dir, '{:s}_{:d}{:s}'.format(img_name, current_step, ext))
-                    # util.imsave(E_img, save_img_path, n_channels = opt['n_channels'])
+                    save_img_path = os.path.join(img_dir, '{:s}_{:d}{:s}'.format(img_name, current_step, ext))
+                    util.imsave(E_img, save_img_path, n_channels = opt['n_channels'])
 
                     # -----------------------
                     # calculate PSNR
@@ -238,6 +243,7 @@ def main(json_path='options/train_dncnn.json'):
                     avg_psnr += current_psnr
 
                 avg_psnr = avg_psnr / idx
+                valid_avg_psnr_dict[current_step] = avg_psnr
 
                 # testing log
                 logger.info('<epoch:{:3d}, iter:{:8,d}, Average PSNR : {:<.2f}dB\n'.format(epoch, current_step, avg_psnr))
@@ -245,6 +251,29 @@ def main(json_path='options/train_dncnn.json'):
     logger.info('Saving the final model.')
     model.save('latest')
     logger.info('End of training.')
+
+    logger.info('Saving training loss and validation PSNR.')
+    
+    # Saving loss
+    loss_arr = np.array(list(train_loss_dict.items()))
+    np.savetxt(opt["path"]["root"] + "/loss_array.txt", loss_arr)
+    # loss_sorted = sorted(train_loss_dict.items())
+    # iters, loss = zip(*loss_sorted)
+    # plt.plot(iters, loss, marker='o', linestyle="dashed")
+    # plt.xlabel("Iterations")
+    # plt.ylabel("Training Loss")
+    # plt.savefig(os.path.join("loss_plot.png"))
+
+    # Saving validation PSNR
+    psnr_arr = np.array(list(valid_avg_psnr_dict.items()))
+    np.savetxt(opt["path"]["root"] + "/psnr_array.txt", psnr_arr)
+    # psnr_sorted = sorted(valid_avg_psnr_dict.items())
+    # iters_valid, psnr = zip(*psnr_sorted)
+    # plt.plot(iters_valid, psnr, marker='o', linestyle="dashed")
+    # plt.xlabel("Iterations")
+    # plt.ylabel("Average Validation PSNR")
+    # plt.savefig(os.path.join("validation_psnr.png"))
+    
 
 
 if __name__ == '__main__':

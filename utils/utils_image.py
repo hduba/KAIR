@@ -3,6 +3,7 @@ import math
 import random
 import numpy as np
 import torch
+import skimage
 import cv2
 # import tensorflow_probability as tfp
 # import tensorflow as tf
@@ -237,58 +238,67 @@ def mkdir_and_rename(path):
 # --------------------------------------------
 # get uint8/uint16 image of size HxWxn_channels (RGB)
 # --------------------------------------------
-def imread_uint(path, n_channels=3):
-    #  input: path
-    # output: HxWx3(RGB or GGG), or HxWx1 (G)
-    if n_channels == 1:
-        if path.endswith('jp2'):
-            img_gdal = gdal.Open(path)
-            img = np.array(img_gdal.ReadAsArray())
-            img = np.int16(img)
-            img = np.expand_dims(img, axis=2)
+def imread_uint(im_path, nchannels=1):
+    """
+    Args:
+        im_path: Path to image
+        nchannels: number of channels in image (default: 1)
+        norm_factor: factor to scale image by (default: 65535.0 for JPEG2000 and 255.0 else)
+
+    Returns: N x M X C image array with values in [0,1] (dtype: float)
+    """
+
+    if im_path.endswith('jp2'):
+         img_gdal = gdal.Open(im_path)
+         if nchannels == 1:
+             img = np.array(img_gdal.ReadAsArray())
+             img = np.uint16(img)
+             img = np.expand_dims(img, axis=2)
+         else:
+             channels_list = []
+             for i in range(nchannels):
+                 channel = img_gdal.GetRasterBand(1).ReadAsArray()
+                 channels_list.append(channel)
+             rows = channels_list[0].shape[0]
+             cols = channels_list[0].shape[1]
+             img = np.zeros((rows, cols, nchannels))
+             for j in range(len(channels_list)):
+                 img[:, :, j] = channels_list[j]
+    else:
+        if norm_factor == 0:
+            norm_factor = 255.0
+        img = Image.open(os.path.join(im_path))
+        if nchannels == 1:
+            img = ImageOps.grayscale(img)
+            img = np.asarray(img) / norm_factor
+            img = np.expand_dims(img, 2)
         else:
-            img = cv2.imread(path, 0)  # cv2.IMREAD_GRAYSCALE
-            img = np.expand_dims(img, axis=2)  # HxWx1
-    elif n_channels == 3:
-        if path.endswith('jp2'):
-            img_gdal = gdal.Open(path)
-            r = img_gdal.GetRasterBand(1).ReadAsArray()
-            g = img_gdal.GetRasterBand(2).ReadAsArray()
-            b = img_gdal.GetRasterBand(3).ReadAsArray()
-            img = np.zeros((r.shape[0], r.shape[1], 3))
-            img[:, :, 0] = r
-            img[:, :, 1] = g
-            img[:, :, 2] = b
-        else: 
-            img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # BGR or G
-            if img.ndim == 2:
-                img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # GGG
-            else:
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # RGB
+            img = img.convert("RGB")
+            img = np.asarray(img) / norm_factor
+        img = np.float64(img)
+
     return img
 
 
 # --------------------------------------------
 # matlab's imwrite
 # --------------------------------------------
-def imsave(img, img_path, n_channels=3):
-    img = np.squeeze(img)
-    if img_path.endswith("jp2"):
+def imsave(img, img_path, n_channels=3, norm_factor=0):
+    if img_path.endswith('jp2'):
+        if norm_factor == 0:
+            norm_factor = 65535.0
         rows = img.shape[0]
         cols = img.shape[1]
         driver = gdal.GetDriverByName('GTiff')
-        if n_channels == 1:
-             dataset_out = driver.Create(img_path, cols, rows, 1, gdal.GDT_Float32)
-             dataset_out.GetRasterBand(1).WriteArray(img)
-        elif n_channels == 3:
-             dataset_out = driver.Create(img_path, cols, rows, 3, gdal.GDT_Float32)
-             dataset_out.GetRasterBand(1).WriteArray(img)
-             dataset_out.GetRasterBand(2).WriteArray(img)
-             dataset_out.GetRasterBand(3).WriteArray(img)
+        dataset_out = driver.Create(img_path, cols, rows, n_channels, gdal.GDT_UInt16)
+        if nchannels==1:
+            dataset_out.GetRasterBand(1).WriteArray(img[:, :] * norm_factor)
+        for i in range(n_channels):
+            dataset_out.GetRasterBand(i+1).WriteArray(img[:, :, i] * norm_factor)
     else:
-        if img.ndim == 3:
-             img = img[:, :, [2, 1, 0]]
-        cv2.imwrite(img_path, img)
+        if norm_factor == 0:
+            norm_factor = 255.0
+        cv2.imwrite(img_path, img * norm_factor)
 
 
 def imwrite(img, img_path):
@@ -366,7 +376,7 @@ def uint2tensor3(img, image_ext):
     if img.ndim == 2:
         img = np.expand_dims(img, axis=2)
     if image_ext == 'jp2':
-        return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(65535.)
+        return torch.from_numpy(np.ascontiguousarray(img).astype(np.int32)).permute(2, 0, 1).float().div(65535.)
     else:
         return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(255.)
 
@@ -709,22 +719,24 @@ def channel_convert(in_c, tar_type, img_list):
 # PSNR
 # --------------------------------------------
 def calculate_psnr(img1, img2, border=0):
+    psnr = skimage.metrics.peak_signal_noise_ratio(img1, img2, data_range=(np.max(img1) - np.min(img1)))
+    return psnr
     # img1 and img2 have range [0, 255]
     # img1 = img1.squeeze()
     # img2 = img2.squeeze()
-    if not img1.shape == img2.shape:
-        raise ValueError('Input images must have the same dimensions.')
-    h, w = img1.shape[:2]
-    img1 = img1[border:h - border, border:w - border]
-    img2 = img2[border:h - border, border:w - border]
+    #if not img1.shape == img2.shape:
+    #    raise ValueError('Input images must have the same dimensions.')
+    #h, w = img1.shape[:2]
+    #img1 = img1[border:h - border, border:w - border]
+    #img2 = img2[border:h - border, border:w - border]
 
-    img1 = img1.astype(np.float64)
-    img2 = img2.astype(np.float64)
-    mse = np.mean((img1 - img2) ** 2)
-    if mse == 0:
-        return float('inf')
+    #img1 = img1.astype(np.float64)
+    #img2 = img2.astype(np.float64)
+    #mse = np.mean((img1 - img2) ** 2)
+    #if mse == 0:
+    #    return float('inf')
     #return 20 * math.log10(255.0 / math.sqrt(mse))
-    return 20 * math.log10(np.max(img1)/ math.sqrt(mse))
+    #return 20 * math.log10(np.max(img1)/ math.sqrt(mse))
 
 
 # --------------------------------------------
